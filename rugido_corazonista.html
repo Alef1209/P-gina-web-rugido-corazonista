@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Publicaciones — El Rugido Corazonista</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --pink:      #EC1688;
+    --pink-pale: #FDE8F3;
+    --pink-mid:  #F9C0E0;
+    --teal:      #00C5DC;
+    --teal-pale: #E0F9FC;
+    --teal-mid:  #9AEAF2;
+    --cream:     #F4EBCC;
+    --beige:     #E5DBC8;
+    --ink:       #2F1D19;
+    --ink-mid:   #6B4A43;
+    --ink-muted: #9A8078;
+    --paper:     #C1BBB1;
+    --white:     #FDFAF3;
+    --border:    rgba(47,29,25,0.13);
+    --shadow:    0 2px 16px rgba(47,29,25,0.10);
+    --warn:      #F5A623;
+    --warn-pale: #FEF6E7;
+    --green:     #2D8A58;
+    --green-pale:#E8F5EE;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--cream); color:var(--ink); font-family:'Outfit',sans-serif; min-height:100vh; }
+
+  header {
+    background:var(--ink); padding:18px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:3px solid var(--pink); position:relative; overflow:hidden;
+  }
+  header::after { content:''; position:absolute; right:-40px; top:-40px; width:160px; height:160px; border-radius:50%; background:var(--teal); opacity:0.07; pointer-events:none; }
+  .header-left { display:flex; align-items:baseline; gap:12px; }
+  .logo { font-family:'DM Serif Display',serif; font-size:22px; color:var(--cream); }
+  .logo span { color:var(--pink); }
+  .logo-sub { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-muted); letter-spacing:.12em; text-transform:uppercase; }
+  .header-right { display:flex; align-items:center; gap:12px; }
+  .sync-status { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500; font-family:'DM Mono',monospace; }
+  .sync-dot { width:8px; height:8px; border-radius:50%; background:var(--paper); transition:background .3s; }
+  .sync-dot.online { background:#4CAF50; }
+  .sync-dot.syncing { background:var(--warn); animation:pulse 1s infinite; }
+  .sync-dot.error { background:#e57373; }
+  .sync-label { color:var(--ink-muted); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .btn { font-family:'Outfit',sans-serif; font-size:13px; font-weight:500; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; transition:all .15s; }
+  .btn-primary { background:var(--pink); color:#fff; }
+  .btn-primary:hover { background:#C9107A; }
+  .btn-ghost { background:transparent; color:var(--cream); border:1px solid rgba(244,235,204,.25); }
+  .btn-ghost:hover { background:rgba(244,235,204,.08); }
+  .btn-danger { background:transparent; color:#e57373; border:1px solid rgba(229,115,115,.3); font-size:12px; padding:5px 10px; border-radius:5px; font-family:'Outfit',sans-serif; font-weight:500; cursor:pointer; transition:all .15s; }
+  .btn-danger:hover { background:rgba(229,115,115,.1); }
+
+  main { max-width:920px; margin:0 auto; padding:32px 24px; }
+
+  .tabs { display:flex; border-bottom:2px solid var(--beige); margin-bottom:28px; }
+  .tab { font-family:'Outfit',sans-serif; font-size:13px; font-weight:500; padding:10px 20px; cursor:pointer; color:var(--ink-muted); background:transparent; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s; }
+  .tab:hover { color:var(--ink); }
+  .tab.active { color:var(--pink); border-bottom-color:var(--pink); }
+
+  /* SETUP BANNER */
+  .setup-banner { background:var(--teal-pale); border:1.5px solid var(--teal-mid); border-radius:10px; padding:16px 20px; margin-bottom:24px; display:flex; align-items:flex-start; gap:12px; }
+  .setup-banner.hidden { display:none; }
+  .setup-icon { font-size:20px; flex-shrink:0; margin-top:2px; }
+  .setup-title { font-size:14px; font-weight:600; color:#007A8A; margin-bottom:4px; }
+  .setup-desc { font-size:13px; color:#007A8A; line-height:1.6; }
+  .setup-desc code { background:rgba(0,197,220,.15); padding:1px 6px; border-radius:4px; font-family:'DM Mono',monospace; font-size:12px; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px; padding:16px 20px; background:var(--white); border-radius:10px; border:1px solid var(--border); box-shadow:var(--shadow); }
+  .legend-title { width:100%; font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.12em; margin-bottom:4px; }
+  .legend-item { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:500; border:1px solid; }
+  .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  .weeks-controls { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .weeks-count { font-family:'DM Mono',monospace; font-size:11px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.1em; }
+  .btn-add { font-family:'Outfit',sans-serif; font-size:13px; font-weight:500; padding:8px 16px; border-radius:6px; border:1.5px dashed var(--paper); background:transparent; color:var(--ink-mid); cursor:pointer; transition:all .15s; }
+  .btn-add:hover { background:var(--white); border-color:var(--teal); color:var(--ink); }
+  .weeks { display:flex; flex-direction:column; gap:14px; }
+
+  .week-block { background:var(--white); border-radius:12px; border:1px solid var(--border); box-shadow:var(--shadow); transition:box-shadow .2s; overflow:hidden; }
+  .week-block:hover { box-shadow:0 4px 20px rgba(47,29,25,.13); }
+  .week-header { background:var(--beige); padding:10px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+  .week-header-left { display:flex; align-items:center; gap:10px; }
+  .week-title { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; color:var(--ink-mid); text-transform:uppercase; letter-spacing:.1em; }
+  .delivery-badge { font-family:'DM Mono',monospace; font-size:10px; padding:3px 9px; border-radius:999px; background:var(--pink-pale); color:#9A1060; border:1px solid var(--pink-mid); }
+
+  .week-days { display:grid; grid-template-columns:1fr 1fr; }
+  .day-slot { padding:16px 20px; border-right:1px solid var(--border); }
+  .day-slot:last-child { border-right:none; }
+  .day-label { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px; }
+
+  .section-pill { display:flex; align-items:center; gap:9px; padding:9px 13px; border-radius:8px; font-size:13px; font-weight:500; border:1.5px solid; width:100%; cursor:pointer; transition:all .15s; font-family:'Outfit',sans-serif; }
+  .section-pill:hover { filter:brightness(.95); }
+  .pill-bar { width:4px; height:20px; border-radius:2px; flex-shrink:0; }
+  .pill-name { flex:1; text-align:left; }
+  .pill-arrow { font-size:10px; opacity:.45; }
+  .repeat-warn { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500; color:#A06010; background:var(--warn-pale); border:1px solid #F5C878; border-radius:999px; padding:2px 8px; margin-top:7px; }
+
+  .notes-area { margin-top:10px; }
+  .notes-label { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; display:flex; align-items:center; gap:6px; }
+  .notes-leader-tag { background:var(--beige); color:var(--ink-mid); border-radius:4px; padding:1px 6px; font-size:9px; }
+  .notes-input { width:100%; background:var(--cream); border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-family:'Outfit',sans-serif; font-size:12px; color:var(--ink); resize:none; outline:none; transition:border-color .15s; min-height:54px; }
+  .notes-input:focus { border-color:var(--teal); background:var(--white); }
+  .notes-input::placeholder { color:var(--paper); }
+
+  /* FLOW */
+  .flow-title { font-family:'DM Serif Display',serif; font-size:18px; color:var(--ink); margin-bottom:4px; }
+  .flow-sub { font-size:13px; color:var(--ink-muted); margin-bottom:20px; }
+  .flow-grid { display:flex; flex-direction:column; gap:10px; }
+  .flow-step { display:flex; align-items:stretch; background:var(--white); border-radius:10px; border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; }
+  .flow-accent { width:5px; flex-shrink:0; }
+  .flow-body { padding:14px 18px; flex:1; }
+  .flow-step-header { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .flow-num { font-family:'DM Mono',monospace; font-size:11px; font-weight:500; color:var(--ink-muted); }
+  .flow-step-title { font-size:14px; font-weight:600; color:var(--ink); }
+  .flow-resp { font-size:12px; font-weight:500; color:var(--pink); margin-left:auto; }
+  .flow-desc { font-size:13px; color:var(--ink-mid); line-height:1.6; }
+  .flow-deadline { display:inline-flex; align-items:center; gap:5px; margin-top:8px; font-size:11px; font-weight:500; background:var(--teal-pale); color:#007A8A; border:1px solid var(--teal-mid); border-radius:999px; padding:3px 10px; font-family:'DM Mono',monospace; }
+  .flow-connector { width:2px; height:14px; background:var(--beige); margin:0 auto; }
+
+  .export-bar { margin-top:28px; padding:16px 20px; background:var(--ink); border-radius:10px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:3px solid var(--teal); }
+  .export-text { font-size:13px; color:rgba(244,235,204,.65); }
+  .export-text strong { color:var(--cream); font-weight:500; }
+
+  .dropdown-backdrop { display:none; position:fixed; inset:0; z-index:500; }
+  .dropdown-backdrop.open { display:block; }
+  .floating-dropdown { display:none; position:fixed; background:var(--white); border:1.5px solid var(--teal); border-radius:10px; box-shadow:0 8px 32px rgba(47,29,25,.20); z-index:501; overflow:hidden; min-width:240px; }
+  .floating-dropdown.open { display:block; }
+  .dropdown-header-label { padding:8px 14px; font-family:'DM Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-muted); background:var(--beige); border-bottom:1px solid var(--border); }
+  .dropdown-option { display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer; font-size:13px; font-weight:500; font-family:'Outfit',sans-serif; color:var(--ink); border-bottom:1px solid var(--border); transition:background .1s; }
+  .dropdown-option:last-child { border-bottom:none; }
+  .dropdown-option:hover { background:var(--cream); }
+  .dropdown-option.active { background:var(--pink-pale); }
+  .opt-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .opt-leader { font-size:11px; color:var(--ink-muted); margin-left:auto; padding-left:8px; }
+
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--ink); color:var(--cream); padding:12px 20px; border-radius:8px; font-size:13px; font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,.2); transform:translateY(60px); opacity:0; transition:all .25s cubic-bezier(.34,1.56,.64,1); z-index:999; border-left:3px solid var(--pink); font-family:'Outfit',sans-serif; pointer-events:none; }
+  .toast.show { transform:translateY(0); opacity:1; }
+
+  .loading-overlay { position:fixed; inset:0; background:rgba(244,235,204,.85); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:800; gap:12px; }
+  .loading-overlay.hidden { display:none; }
+  .loading-spinner { width:32px; height:32px; border:3px solid var(--beige); border-top-color:var(--pink); border-radius:50%; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { font-family:'DM Mono',monospace; font-size:12px; color:var(--ink-muted); }
+
+  @media print {
+    header { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .header-right,.btn-add,.btn-danger,.export-bar,.pill-arrow,.tabs,.setup-banner,.loading-overlay { display:none!important; }
+    .floating-dropdown,.dropdown-backdrop { display:none!important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Cargando plan...</div>
+</div>
+
+<header>
+  <div class="header-left">
+    <div class="logo">El Rugido <span>Corazonista</span> 🦖❤️</div>
+    <div class="logo-sub">Plan de publicaciones</div>
+  </div>
+  <div class="header-right">
+    <div class="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span class="sync-label" id="sync-label">Conectando...</span>
+    </div>
+    <button class="btn btn-ghost" onclick="window.print()">↓ Exportar</button>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('plan',this)">Plan semanal</button>
+    <button class="tab" onclick="switchTab('flow',this)">Flujo editorial</button>
+  </div>
+
+  <!-- TAB PLAN -->
+  <div id="tab-plan">
+    <div class="setup-banner hidden" id="setup-banner">
+      <div class="setup-icon">⚙️</div>
+      <div>
+        <div class="setup-title">Configuración necesaria — Supabase</div>
+        <div class="setup-desc">
+          Para activar la sincronización en tiempo real, crea esta tabla en Supabase:<br><br>
+          Ve a tu proyecto → <strong>SQL Editor</strong> → pega y ejecuta este código:<br><br>
+          <code>create table rugido_plan (id text primary key, data jsonb not null, updated_at timestamptz default now());</code><br><br>
+          Luego ve a <strong>Authentication → Policies</strong>, selecciona la tabla <code>rugido_plan</code> y activa <strong>Enable RLS → Add policy → Allow all</strong>.
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-title">Secciones</div>
+      <span class="legend-item" style="background:var(--pink-pale);color:#9A1060;border-color:var(--pink-mid)"><span class="legend-dot" style="background:var(--pink)"></span>Literario y poético · Felipe</span>
+      <span class="legend-item" style="background:var(--teal-pale);color:#007A8A;border-color:var(--teal-mid)"><span class="legend-dot" style="background:var(--teal)"></span>Institucional y deportivo · Aharon</span>
+      <span class="legend-item" style="background:#FFF3E0;color:#8A5A00;border-color:#FFCC80"><span class="legend-dot" style="background:#FFA726"></span>Cultural · Angie</span>
+      <span class="legend-item" style="background:var(--beige);color:var(--ink-mid);border-color:var(--paper)"><span class="legend-dot" style="background:var(--ink-mid)"></span>Especial · rotación</span>
+      <span class="legend-item" style="background:#F5F5F5;color:var(--ink-muted);border-color:var(--paper)"><span class="legend-dot" style="background:var(--paper)"></span>Sin asignar</span>
+    </div>
+
+    <div class="weeks-controls">
+      <span class="weeks-count" id="weeks-count">4 semanas</span>
+      <button class="btn-add" onclick="addWeek()">+ Agregar semana</button>
+    </div>
+
+    <div class="weeks" id="weeks-container"></div>
+
+    <div class="export-bar">
+      <div class="export-text">Ciclo mensual · <strong>Lunes y jueves</strong> · Entrega interna: <strong>sábado anterior</strong></div>
+      <button class="btn btn-primary" onclick="window.print()">↓ Imprimir / PDF</button>
+    </div>
+  </div>
+
+  <!-- TAB FLOW -->
+  <div id="tab-flow" style="display:none">
+    <div class="flow-title">Flujo editorial semanal</div>
+    <div class="flow-sub">Ciclo de producción para cada publicación — lunes y jueves</div>
+    <div class="flow-grid" id="flow-grid"></div>
+  </div>
+</main>
+
+<div class="dropdown-backdrop" id="dd-backdrop" onclick="closeDropdown()"></div>
+<div class="floating-dropdown" id="floating-dd">
+  <div class="dropdown-header-label">Seleccionar sección</div>
+  <div id="dd-options"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://kthyjydesddedtwvhtbg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_erc7aJcrtTVZ2Yjq0qI7aQ_RlIuvmUb';
+const PLAN_ID      = 'rugido-main';
+const POLL_INTERVAL = 8000; // re-fetch every 8s for live sync
+
+// ── DATA ────────────────────────────────────────────────
+const SECTIONS = [
+  { id:'literario',     name:'Literario y poético',      leader:'Felipe',   color:'#EC1688', bg:'#FDE8F3', border:'#F9C0E0', text:'#9A1060' },
+  { id:'institucional', name:'Institucional y deportivo', leader:'Aharon',   color:'#00C5DC', bg:'#E0F9FC', border:'#9AEAF2', text:'#007A8A' },
+  { id:'cultural',      name:'Cultural',                  leader:'Angie',    color:'#FFA726', bg:'#FFF3E0', border:'#FFCC80', text:'#8A5A00' },
+  { id:'especial',      name:'Especial',                  leader:'Rotación', color:'#6B4A43', bg:'#E5DBC8', border:'#C1BBB1', text:'#2F1D19' },
+  { id:'none',          name:'Sin asignar',               leader:'',         color:'#C1BBB1', bg:'#F5F5F5', border:'#D8D4CE', text:'#9A8078' },
+];
+
+const FLOW_STEPS = [
+  { num:'01', title:'Producción de contenido', resp:'Colaboradores',    accent:'#C1BBB1', desc:'Los colaboradores producen texto, imágenes y material bajo orientación del líder.', deadline:'Sábado — 5 días antes' },
+  { num:'02', title:'Revisión del líder',      resp:'Líder de sección', accent:'#FFA726', desc:'El líder revisa pertinencia, aplica correcciones y da el visto bueno temático.', deadline:'Domingo — 4 días antes' },
+  { num:'03', title:'Corrección editorial',    resp:'Felipe',           accent:'#EC1688', desc:'Felipe revisa ortografía, redacción, tono y coherencia con la filosofía del periódico.', deadline:'Lunes o martes — 2–3 días antes' },
+  { num:'04', title:'Revisión final',          resp:'Milena',           accent:'#00C5DC', desc:'Milena da el visto bueno o señala correcciones. Máximo 2h para aplicarlas. Si no responde en 24h, Felipe puede autorizar.', deadline:'Martes o miércoles — 1–2 días antes' },
+  { num:'05', title:'Diseño visual',           resp:'Juan Pablo',       accent:'#7F77DD', desc:'Juan Pablo hace la edición digital: diseño, plantillas de Instagram, estética.', deadline:'Miércoles — 1 día antes' },
+  { num:'06', title:'Publicación',             resp:'Angie',            accent:'#1D9E75', desc:'Angie publica en el horario definido y gestiona métricas e interacciones.', deadline:'Lunes o jueves — día de publicación' },
+];
+
+const DEFAULT_PLAN = [
+  { lunes:'literario',     jueves:'institucional', notasLunes:'', notasJueves:'' },
+  { lunes:'literario',     jueves:'cultural',      notasLunes:'', notasJueves:'' },
+  { lunes:'institucional', jueves:'cultural',      notasLunes:'', notasJueves:'' },
+  { lunes:'literario',     jueves:'especial',      notasLunes:'', notasJueves:'' },
+];
+
+let plan = JSON.parse(JSON.stringify(DEFAULT_PLAN));
+let activeSlot = null;
+let pollTimer = null;
+let lastUpdatedAt = null;
+let supabaseOk = false;
+
+// ── SUPABASE ─────────────────────────────────────────────
+const headers = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
+
+async function loadFromSupabase() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rugido_plan?id=eq.${PLAN_ID}&select=data,updated_at`, { headers });
+    if (res.status === 404 || res.status === 400 || res.status === 401) {
+      throw new Error('table_missing');
+    }
+    if (!res.ok) throw new Error('fetch_error');
+    const rows = await res.json();
+    if (rows.length === 0) {
+      // Table exists but no row yet — save default
+      await saveToSupabase(true);
+    } else {
+      const remote = rows[0];
+      if (remote.updated_at !== lastUpdatedAt) {
+        lastUpdatedAt = remote.updated_at;
+        plan = remote.data;
+        renderWeeks();
+      }
+    }
+    supabaseOk = true;
+    setSyncStatus('online', 'En línea');
+    document.getElementById('setup-banner').classList.add('hidden');
+    return true;
+  } catch(e) {
+    supabaseOk = false;
+    if (e.message === 'table_missing') {
+      setSyncStatus('error', 'Sin tabla');
+      document.getElementById('setup-banner').classList.remove('hidden');
+    } else {
+      setSyncStatus('error', 'Sin conexión');
+    }
+    return false;
+  }
+}
+
+async function saveToSupabase(silent = false) {
+  if (!silent) setSyncStatus('syncing', 'Guardando...');
+  try {
+    const body = JSON.stringify({ id: PLAN_ID, data: plan, updated_at: new Date().toISOString() });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rugido_plan`, {
+      method: 'POST',
+      headers: { ...headers, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body
+    });
+    if (!res.ok) throw new Error();
+    const rows = await res.json();
+    if (rows[0]) lastUpdatedAt = rows[0].updated_at;
+    if (!silent) { setSyncStatus('online', 'Guardado ✓'); showToast('Plan guardado y sincronizado ✓'); }
+    supabaseOk = true;
+  } catch(e) {
+    setSyncStatus('error', 'Error al guardar');
+    if (!silent) showToast('No se pudo guardar en la nube');
+  }
+}
+
+function setSyncStatus(state, label) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = label;
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    if (supabaseOk) await loadFromSupabase();
+  }, POLL_INTERVAL);
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function getSection(id) { return SECTIONS.find(s=>s.id===id) || SECTIONS[SECTIONS.length-1]; }
+
+function renderPill(weekIdx, day, sectionId) {
+  const s = getSection(sectionId);
+  const sameWeek = plan[weekIdx].lunes !== 'none' && plan[weekIdx].lunes === plan[weekIdx].jueves;
+  const warn = (sameWeek && sectionId !== 'none')
+    ? `<div class="repeat-warn">⚠ Misma sección en la semana</div>` : '';
+  return `
+    <button class="section-pill" style="background:${s.bg};border-color:${s.border};color:${s.text}"
+      onclick="openDropdown(event,${weekIdx},'${day}')">
+      <span class="pill-bar" style="background:${s.color}"></span>
+      <span class="pill-name">${s.name}</span>
+      <span class="pill-arrow">▾</span>
+    </button>${warn}`;
+}
+
+function renderNotes(weekIdx, day) {
+  const key = 'notas' + day.charAt(0).toUpperCase() + day.slice(1);
+  const sectionId = plan[weekIdx][day];
+  const leader = getSection(sectionId).leader;
+  const val = (plan[weekIdx][key] || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return `
+    <div class="notes-area">
+      <div class="notes-label">Nota interna ${leader ? `<span class="notes-leader-tag">${leader}</span>` : ''}</div>
+      <textarea class="notes-input" placeholder="Escribe una nota para este slot..."
+        oninput="updateNote(${weekIdx},'${day}',this.value)">${val}</textarea>
+    </div>`;
+}
+
+function renderWeeks() {
+  const c = document.getElementById('weeks-container');
+  c.innerHTML = plan.map((week,i) => `
+    <div class="week-block" id="week-${i}">
+      <div class="week-header">
+        <div class="week-header-left">
+          <span class="week-title">Semana ${i+1}</span>
+          <span class="delivery-badge">📅 Entrega: sábado sem. ${i+1}</span>
+        </div>
+        ${plan.length>1?`<button class="btn-danger" onclick="removeWeek(${i})">✕ Eliminar</button>`:''}
+      </div>
+      <div class="week-days">
+        <div class="day-slot">
+          <div class="day-label">Lunes</div>
+          ${renderPill(i,'lunes',week.lunes)}
+          ${renderNotes(i,'lunes')}
+        </div>
+        <div class="day-slot">
+          <div class="day-label">Jueves</div>
+          ${renderPill(i,'jueves',week.jueves)}
+          ${renderNotes(i,'jueves')}
+        </div>
+      </div>
+    </div>`).join('');
+  document.getElementById('weeks-count').textContent = `${plan.length} semana${plan.length!==1?'s':''}`;
+}
+
+function renderFlow() {
+  document.getElementById('flow-grid').innerHTML = FLOW_STEPS.map((step,i) => `
+    <div class="flow-step">
+      <div class="flow-accent" style="background:${step.accent}"></div>
+      <div class="flow-body">
+        <div class="flow-step-header">
+          <span class="flow-num">${step.num}</span>
+          <span class="flow-step-title">${step.title}</span>
+          <span class="flow-resp">${step.resp}</span>
+        </div>
+        <div class="flow-desc">${step.desc}</div>
+        <div class="flow-deadline">⏱ ${step.deadline}</div>
+      </div>
+    </div>
+    ${i<FLOW_STEPS.length-1?'<div class="flow-connector"></div>':''}`).join('');
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────
+function updateNote(weekIdx, day, value) {
+  const key = 'notas' + day.charAt(0).toUpperCase() + day.slice(1);
+  plan[weekIdx][key] = value;
+  scheduleSave();
+}
+
+let saveTimer = null;
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveToSupabase(false), 1500);
+}
+
+function openDropdown(event, weekIdx, day) {
+  event.stopPropagation();
+  activeSlot = { weekIdx, day };
+  const currentId = plan[weekIdx][day];
+  document.getElementById('dd-options').innerHTML = SECTIONS.map(s=>`
+    <div class="dropdown-option ${s.id===currentId?'active':''}" onclick="selectSection('${s.id}')">
+      <span class="opt-dot" style="background:${s.color}"></span>
+      <span>${s.name}</span>
+      ${s.leader?`<span class="opt-leader">${s.leader}</span>`:''}
+    </div>`).join('');
+  const dd = document.getElementById('floating-dd');
+  document.getElementById('dd-backdrop').classList.add('open');
+  dd.classList.add('open');
+  const rect = event.currentTarget.getBoundingClientRect();
+  const ddH = dd.offsetHeight, ddW = dd.offsetWidth;
+  let top = rect.bottom+6, left = rect.left;
+  if (top+ddH > window.innerHeight-12) top = rect.top-ddH-6;
+  if (left+ddW > window.innerWidth-12) left = window.innerWidth-ddW-12;
+  if (left<8) left=8;
+  dd.style.top=top+'px'; dd.style.left=left+'px';
+}
+
+function closeDropdown() {
+  document.getElementById('floating-dd').classList.remove('open');
+  document.getElementById('dd-backdrop').classList.remove('open');
+  activeSlot = null;
+}
+
+function selectSection(sectionId) {
+  if (!activeSlot) return;
+  plan[activeSlot.weekIdx][activeSlot.day] = sectionId;
+  closeDropdown();
+  renderWeeks();
+  saveToSupabase(false);
+  showToast('Sección actualizada');
+}
+
+function addWeek() {
+  plan.push({ lunes:'none', jueves:'none', notasLunes:'', notasJueves:'' });
+  renderWeeks();
+  saveToSupabase(false);
+  showToast('Semana agregada');
+  setTimeout(()=>document.getElementById(`week-${plan.length-1}`)?.scrollIntoView({behavior:'smooth',block:'center'}),100);
+}
+
+function removeWeek(idx) {
+  if (plan.length<=1) return;
+  plan.splice(idx,1);
+  renderWeeks();
+  saveToSupabase(false);
+  showToast('Semana eliminada');
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-plan').style.display = tab==='plan'?'block':'none';
+  document.getElementById('tab-flow').style.display = tab==='flow'?'block':'none';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDropdown(); });
+
+// ── INIT ──────────────────────────────────────────────────
+async function init() {
+  renderWeeks();
+  renderFlow();
+  const ok = await loadFromSupabase();
+  document.getElementById('loading').classList.add('hidden');
+  if (ok) startPolling();
+}
+
+init();
+</script>
+</body>
+</html>
